@@ -1,5 +1,8 @@
+require_relative './movements/horizontal'
+require_relative './movements/diagonal'
+require_relative './movements/discrete'
+
 require_relative 'piece.rb'
-require_relative 'movement.rb'
 require_relative 'knight.rb'
 require_relative 'bishop.rb'
 require_relative 'rook.rb'

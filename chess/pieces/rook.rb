@@ -1,8 +1,10 @@
+require_relative './movements/horizontal'
+
 class Rook < Piece
   include Horizontalable
 
-  def valid_move?(to_pos)
-    in_horizontal?(to_pos)
+  def moves
+    h_moves
   end
 
   def to_s

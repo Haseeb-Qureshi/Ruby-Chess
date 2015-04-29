@@ -1,4 +1,5 @@
 require_relative './pieces/pieces.rb'
+require 'byebug'
 
 class Board
   attr_accessor :rows
