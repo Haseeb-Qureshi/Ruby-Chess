@@ -36,8 +36,10 @@ class Game
       str += "X_dir: #{piece.x_dir}" if piece.is_a?(Pawn)
       str += "Diffmap: #{piece.moves_debug_diffsmap} \n" if piece.is_a?(Knight)
       str += "Select_valids: #{piece.moves_debug_select}" if piece.is_a?(Knight)
+      str += "\n\nWhite in check?: #{in_check?(:w)}\nBlack in check?: #{in_check?(:b)}\n"
+      str += "Checkmate-W: #{checkmate?(:w)} \nCheckmate-B?: #{checkmate?(:b)}"
     end
-    @debug << str
+    #@debug << str
   end
 
   def play
@@ -48,14 +50,20 @@ class Game
       @players = @players.rotate(1)
       puts render_game
     end
+    game_over_message
   end
 
   def welcome
     puts "Welcome to chess! White goes first."
   end
 
+  def game_over_message
+    winner = @players.last == :w ? "White" : "Black"
+    puts "#{winner} won the game!".colorize(color: :yellow).bold
+  end
+
   def render_game
-    sleep(0.3)
+    sleep(0.1)
     system 'clear'
     rendered = []
     @board.rows.each_with_index do |row, i|
@@ -71,7 +79,8 @@ class Game
         this_line += square
       end
       this_line << captured(:w) if i == 0
-      this_line << captured(:b) if i == 7
+      this_line << captured(:b).colorize(color: :blue) if i == 7
+      this_line << "   Check!" if i == 4 && @players.any?{ |c| in_check?(c) }
       rendered << this_line
     end
     add_indices(rendered) + @debug # REMOVE DEBUG LATER
@@ -88,15 +97,29 @@ class Game
 
     puts "Where do you want to move?"
     to_coords = move_to(color)
+    raise CheckError if puts_in_check?(from_coords, to_coords, color)
+
     move(from_coords, to_coords)
   rescue ArgumentError
     puts "Invalid selection. Try again."
-    puts render_game
+    sleep(1)
+    reset_render
     retry
   rescue UnableError
     puts "You can't do that."
-    puts render_game
+    sleep(1)
+    reset_render
     retry
+  rescue CheckError
+    puts "That move would put you in check."
+    sleep(1)
+    reset_render
+    retry
+  end
+
+  def reset_render
+    @avail_moves = []
+    puts render_game
   end
 
   def move(from_coords, to_coords)
@@ -174,37 +197,44 @@ class Game
     (x + dx).between?(0, 7) && (y + dy).between?(0, 7)
   end
 
-  def in_check?(from_coords, to_coords,color)
+  def in_check?(color)
+    all = @board.pieces(opp(color)).inject([]) do |all_moves, piece|
+      all_moves + piece.moves
+    end
+
+    all.include?(@board.king(color).pos)
+  end
+
+  def puts_in_check?(from_coords, to_coords, color)
     there = @board[*to_coords]
     piece = @board[*from_coords]
     @board[*from_coords] = nil
     @board[*to_coords] = piece
+    piece.pos = to_coords
 
-    check = false
-    @board.rows.each do |row|
-      row.each do |piece|
-        next if piece.nil? || piece.color == color
-        check = true if piece.valid_moves.include?(king_coords(color))
-      end
-    end
+    check = in_check?(color)
 
     @board[*to_coords] = there
     @board[*from_coords] = piece
+    piece.pos = from_coords
+
     check
   end
 
-  def game_over?
-    false
+  def opp(color)
+    color == :w ? :b : :w
   end
 
-  def king_coords(color)
-    @board.rows.each_with_index do |row, x|
-      rows.each_with_index do |piece, y|
-        if piece && piece.color == color && piece.is_a?(King)
-          return [x, y]
-        end
+  def checkmate?(color)
+    @board.pieces(color).all? do |piece|
+      piece.moves.all? do |move|
+        puts_in_check?(piece.pos, move, color)
       end
     end
+  end
+
+  def game_over?
+    checkmate?(@players.first)
   end
 
   def invalid_move?(from_coords, to_coords)
@@ -219,6 +249,18 @@ class Game
     rendered << "   " + letters.join
   end
 
+  def checkdebug()
+    move([6, 5], [5, 5])
+    move([1, 4], [3, 4])
+    move([6, 6], [4, 6])
+    play
+  end
+
+  # def all_valid_moves(color)
+  #   @board.pieces(color).inject
+  #
+  #   end
+  # end
 
 
 end

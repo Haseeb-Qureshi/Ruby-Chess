@@ -59,7 +59,7 @@ module Diagonalable
     x, y = @pos
 
     i, j = x - 1, y - 1
-    until i > 7 || j < 0
+    until i < 0 || j < 0
       el = @board[i, j]
       if el.nil?
         up_left_arr << [i, j]
@@ -82,7 +82,7 @@ module Diagonalable
     x, y = @pos
 
     i, j = x + 1, y + 1
-    until i > 7 || j < 0
+    until i > 7 || j > 7
       el = @board[i, j]
       if el.nil?
         down_right_arr << [i, j]

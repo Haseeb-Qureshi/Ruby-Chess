@@ -33,6 +33,14 @@ class Board
     @rows[6] = bottom_pawns; @rows[7] = bottom_row
   end
 
+  def pieces(color)
+    @rows.flatten.compact.select { |piece| piece.color == color }
+  end
+
+  def king(color)
+    pieces(color).find { |piece| piece.is_a?(King) }
+  end
+
   private
 
   def eight_pawns

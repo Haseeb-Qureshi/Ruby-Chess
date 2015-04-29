@@ -4,10 +4,6 @@ class Pawn < Piece
     super(board, color, pos)
   end
 
-  def valid_move?(to_pos)
-    moves.include?(to_pos)
-  end
-
   def moves
     @moved ? has_moved : never_moved
   end

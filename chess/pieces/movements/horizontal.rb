@@ -47,6 +47,8 @@ module Horizontalable
 
     y = 7 - y
     up_moves_arr = []
+    # p "size = #{@board.rows.size}"
+    # @board.rows.each_with_index { |row, i| p row if row.size == 9; p i if row.size==9}
     @board.rows.transpose[x].reverse.each_with_index do |el, i|
       next if i <= y
       if el.nil?

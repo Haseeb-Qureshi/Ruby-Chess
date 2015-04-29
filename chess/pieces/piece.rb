@@ -24,14 +24,3 @@ class Piece
   end
 
 end
-
-
-=begin
-load 'board.rb'
-b = Board.new
-q = Queen.new(b, :w, [4, 1])
-b[*q.pos] = q
-q2 = Queen.new(b, :b, [2, 3])
-b[*q2.pos] = q2
-q.moves.each { |spot| b[*spot] = "H" }
-=end
