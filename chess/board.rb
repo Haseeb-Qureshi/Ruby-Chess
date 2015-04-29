@@ -24,7 +24,7 @@ class Board
 
 
   def set_board
-    first_row = set_row(royalty, 0, :w)
+    first_row = set_row(royalty, 0, :b)
     second_row = set_row(eight_pawns, 1, :b)
     bottom_pawns = set_row(eight_pawns, 6, :w)
     bottom_row = set_row(royalty, 7, :w)

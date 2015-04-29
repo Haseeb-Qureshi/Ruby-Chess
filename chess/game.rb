@@ -53,6 +53,8 @@ class Game
 
     @board[*from_coords] = nil
     @board[*to_coords] = piece
+
+    piece.moved = true
   end
 
   def move_from(color)
