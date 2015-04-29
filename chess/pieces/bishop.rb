@@ -7,10 +7,6 @@ class Bishop < Piece
     d_moves
   end
 
-  def valid_move?(to_pos)
-    moves.include?(to_pos)
-  end
-
   def to_s
     " B "
   end

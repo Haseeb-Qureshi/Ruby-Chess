@@ -14,7 +14,7 @@ module Diagonalable
 
     i, j = x - 1, y + 1
     until i < 0 || j > 7
-      p el = @board[i, j]
+      el = @board[i, j]
       if el.nil?
         right_up_arr << [i, j]
       elsif el && el.color == @color
@@ -37,7 +37,7 @@ module Diagonalable
 
     i, j = x + 1, y - 1
     until i > 7 || j < 0
-      p el = @board[i, j]
+      el = @board[i, j]
       if el.nil?
         left_down_arr << [i, j]
       elsif el && el.color == @color
@@ -60,7 +60,7 @@ module Diagonalable
 
     i, j = x - 1, y - 1
     until i > 7 || j < 0
-      p el = @board[i, j]
+      el = @board[i, j]
       if el.nil?
         up_left_arr << [i, j]
       elsif el && el.color == @color
@@ -83,7 +83,7 @@ module Diagonalable
 
     i, j = x + 1, y + 1
     until i > 7 || j < 0
-      p el = @board[i, j]
+      el = @board[i, j]
       if el.nil?
         down_right_arr << [i, j]
       elsif el && el.color == @color
