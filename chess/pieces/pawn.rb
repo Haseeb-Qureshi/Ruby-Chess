@@ -38,6 +38,6 @@ class Pawn < Piece
   end
 
   def to_s
-    " p "
+    @color == :b ? "♟".colorize(:black) : "♟".colorize(:white)
   end
 end

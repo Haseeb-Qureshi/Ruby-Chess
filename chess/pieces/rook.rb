@@ -8,6 +8,6 @@ class Rook < Piece
   end
 
   def to_s
-    " R "
+    color == :b ? "♜".colorize(:black) : "♜".colorize(:white)
   end
 end

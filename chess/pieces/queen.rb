@@ -10,6 +10,6 @@ class Queen < Piece
   end
 
   def to_s
-    "-Q-"
+    color == :b ? "♛".colorize(:black) : "♛".colorize(:white)
   end
 end

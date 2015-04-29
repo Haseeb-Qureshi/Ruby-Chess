@@ -1,9 +1,8 @@
 require_relative 'board'
+require 'colorize'
 
 # CHECK_MATE?
 # CREATE AN ARRAY OF ALL CAPTURES FOR EACH PLAYER
-# IN DISPLAY METHOD, APPEND 8-1 for each row, a-h on bottom
-# FINISH WRITING PAWN METHODS
 
 class Game
 
@@ -15,11 +14,11 @@ class Game
 
   def play
     welcome
-    render_game
+    puts render_game
     until game_over?
       player_move(@players.first)
       @players = @players.rotate(1)
-      render_game
+      puts render_game
     end
   end
 
@@ -28,7 +27,27 @@ class Game
   end
 
   def render_game
-    @board.rows.each { |row| p row }
+    rendered = []
+    @board.rows.each_with_index do |row, i|
+      this_line = ""
+      row.each_with_index do |piece, j|
+        str = " "
+        str += piece ? piece.to_s : " "
+        str += " "
+        if (i + j).even?
+          str = str.colorize(background: :light_red)
+        else
+          str = str.colorize(background: :light_cyan)
+        end
+        this_line += str
+      end
+      rendered << this_line
+    end
+    rendered.map!.with_index do |line, i|
+      " #{8 - i} " + line
+    end
+    letters = ('a'..'h').to_a.map { |l| " #{l} " }
+    rendered << "   " + letters.join
   end
 
   def player_move(color)

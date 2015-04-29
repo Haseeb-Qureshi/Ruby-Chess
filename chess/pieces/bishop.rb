@@ -8,6 +8,6 @@ class Bishop < Piece
   end
 
   def to_s
-    " B "
+    color == :b ? "♝".colorize(:black) : "♝".colorize(:white)
   end
 end

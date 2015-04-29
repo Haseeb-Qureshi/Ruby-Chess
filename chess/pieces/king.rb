@@ -9,6 +9,6 @@ class King < Piece
   end
 
   def to_s
-    "-K-"
+    color == :b ? "♚".colorize(:black) : "♚".colorize(:white)
   end
 end
