@@ -1,15 +1,43 @@
 require_relative 'board'
 require 'colorize'
+require 'byebug'
 
 # CHECK_MATE?
 # CREATE AN ARRAY OF ALL CAPTURES FOR EACH PLAYER
 
 class Game
+  INPUT = {
+    "w" => [-1, 0],
+    "a" => [0, -1],
+    "s" => [1, 0],
+    "d" => [0, 1],
+    "\r" => [0, 0]
+    }
 
   def initialize
     @board = Board.new
     @players = [:w, :b]
     @captured = []
+    @cursor = [0, 0]
+    @avail_moves = []
+    @debug = []
+  end
+
+  def debug
+    @debug = []
+    piece = @board[*@cursor]
+    str = ''
+    if piece
+      str += "Type: #{piece.class} \n"
+      str += "Color: #{piece.color} \n"
+      str += "Pos : #{piece.pos} \n"
+      str += "Moves: #{piece.moves} \n"
+      str += "Moved?: #{piece.moved} \n"
+      str += "X_dir: #{piece.x_dir}" if piece.is_a?(Pawn)
+      str += "Diffmap: #{piece.moves_debug_diffsmap} \n" if piece.is_a?(Knight)
+      str += "Select_valids: #{piece.moves_debug_select}" if piece.is_a?(Knight)
+    end
+    @debug << str
   end
 
   def play
@@ -27,27 +55,31 @@ class Game
   end
 
   def render_game
+    sleep(0.3)
+    system 'clear'
     rendered = []
     @board.rows.each_with_index do |row, i|
       this_line = ""
+
       row.each_with_index do |piece, j|
-        str = " "
-        str += piece ? piece.to_s : " "
-        str += " "
-        if (i + j).even?
-          str = str.colorize(background: :light_red)
-        else
-          str = str.colorize(background: :light_cyan)
-        end
-        this_line += str
+        render_piece = piece ? piece.to_s : " "
+        bg = (i + j).even? ? :light_red : :light_cyan
+        square = " #{render_piece} ".colorize(background: bg)
+        square = square.swap if [i, j] == @cursor #swap
+        square = square.colorize(background: :yellow) if
+                            @avail_moves.include?([i, j])
+        this_line += square
       end
+      this_line << captured(:w) if i == 0
+      this_line << captured(:b) if i == 7
       rendered << this_line
     end
-    rendered.map!.with_index do |line, i|
-      " #{8 - i} " + line
-    end
-    letters = ('a'..'h').to_a.map { |l| " #{l} " }
-    rendered << "   " + letters.join
+    add_indices(rendered) + @debug # REMOVE DEBUG LATER
+  end
+
+  def captured(color)
+    line = @captured.select { |piece| piece.color == color }
+    "  " + line.join(" ")
   end
 
   def player_move(color)
@@ -55,13 +87,15 @@ class Game
     piece = @board[*from_coords]
 
     puts "Where do you want to move?"
-    to_coords = move_to(from_coords, color)
+    to_coords = move_to(color)
     move(from_coords, to_coords)
   rescue ArgumentError
     puts "Invalid selection. Try again."
+    puts render_game
     retry
   rescue UnableError
-    puts "That piece can't move. Pick another piece."
+    puts "You can't do that."
+    puts render_game
     retry
   end
 
@@ -72,35 +106,72 @@ class Game
 
     @board[*from_coords] = nil
     @board[*to_coords] = piece
+    piece.pos = to_coords
 
+    @avail_moves = []
     piece.moved = true
   end
 
-  def move_from(color)
-    puts "Please pick what piece you want to move."
-    puts "Select a piece like so: 'a1', 'h7'"
-    from_coords = parse_input(gets.chomp)
-    piece = @board[*from_coords]
-    raise ArgumentError unless piece && piece.color == color
-    raise UnableError if piece.moves.empty?
-    from_coords
+  def move_from(my_color)
+    loop do
+      puts "Use W-A-S-D to navigate to a piece. Press enter to select."
+      valid_key = false
+      until valid_key
+        key = $stdin.getch.downcase
+        valid_key = true if valid_input?(key)
+      end
+
+      update_cursor(key)
+      piece = @board[*@cursor]
+      if piece && piece.color == my_color
+        @avail_moves = piece.moves
+      else
+        @avail_moves = []
+      end
+      puts render_game
+
+      if key == "\r"
+        raise ArgumentError unless piece && piece.color == my_color
+        raise UnableError if piece.moves.empty?
+        break
+      end
+    end
+    @cursor.dup
   end
 
-  def move_to(from_coords, color)
-    puts "Please pick what spot you'd like to move to."
-    to_coords = parse_input(gets.chomp)
-    if invalid_move?(from_coords, to_coords)
-      raise InvalidError
-    elsif in_check?(from_coords, to_coords, color)
-      raise CheckError
+  def move_to(color)
+    loop do
+      puts "Use W-A-S-D to navigate. Press enter to select your move."
+      valid_key = false
+      until valid_key
+        key = $stdin.getch.downcase
+        valid_key = true if valid_input?(key)
+      end
+
+      update_cursor(key)
+      puts render_game
+      if key == "\r"
+        piece = @board[*@cursor]
+        raise UnableError if !@avail_moves.include?(@cursor)
+        break
+      end
     end
-    to_coords
-  rescue CheckError
-    puts "You can't move into Check"
-    retry
-  rescue InvalidError
-    puts "You can't move there!"
-    retry
+    @cursor.dup
+  end
+
+  def update_cursor(key)
+    x, y = @cursor
+    dx, dy = INPUT[key]
+    @cursor = [x + dx, y + dy]
+                            debug # REMOVE LATER
+  end
+
+  def valid_input?(char)
+    charsym = char
+    return false unless INPUT.has_key?(charsym)
+    x, y = @cursor
+    dx, dy = INPUT[charsym]
+    (x + dx).between?(0, 7) && (y + dy).between?(0, 7)
   end
 
   def in_check?(from_coords, to_coords,color)
@@ -140,16 +211,12 @@ class Game
     !@board[*from_coords].moves.include?(to_coords)
   end
 
-  def parse_input(input)
-    case
-    when input.length != 2 then raise ArgumentError
-    when !input[0][/[A-Ha-h]/] || !input[1].to_i.between?(1, 8)
-      raise ArgumentError
-    else
-      x = input[0].downcase.ord - 'a'.ord
-      y = 8 - input[1].to_i
+  def add_indices(rendered)
+    rendered.map!.with_index do |line, i|
+      " #{8 - i} " + line
     end
-    [y, x]
+    letters = ('a'..'h').to_a.map { |l| " #{l} " }
+    rendered << "   " + letters.join
   end
 
 
@@ -163,4 +230,8 @@ class InvalidError < StandardError
 end
 
 class CheckError < StandardError
+end
+
+if __FILE__ == $0
+  Game.new.play
 end

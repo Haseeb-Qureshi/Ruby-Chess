@@ -13,4 +13,5 @@ class Knight < Piece
   def to_s
     color == :b ? "♞".colorize(:black) : "♞".colorize(:white)
   end
+
 end

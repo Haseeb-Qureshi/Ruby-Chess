@@ -9,19 +9,19 @@ class Pawn < Piece
   end
 
   def moves
-    @moved ? moved : never_moved
+    @moved ? has_moved : never_moved
   end
 
   def never_moved
     x, y = @pos
     if @board[x + @x_dir * 2, y] || @board[x + @x_dir, y]
-      moved
+      has_moved
     else
-      moved << [x + @x_dir * 2, y]
+      has_moved << [x + @x_dir * 2, y]
     end
   end
 
-  def moved
+  def has_moved
     x, y = @pos
     moves_arr = []
     moves_arr << [x + @x_dir, y] unless @board[x + @x_dir, y]

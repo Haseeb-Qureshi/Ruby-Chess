@@ -1,11 +1,7 @@
 class Piece
-  attr_accessor :color, :pos
+  attr_accessor :color, :pos, :moved
   def initialize(board, color = nil, pos = nil)
     @color, @board, @pos, @moved = color, board, pos, false
-  end
-
-  def same_team?(other_piece)
-    @color == other_piece.color
   end
 
   def move(new_pos)
@@ -26,6 +22,7 @@ class Piece
   def inspect
     to_s
   end
+
 end
 
 
