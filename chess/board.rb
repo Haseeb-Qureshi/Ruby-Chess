@@ -4,6 +4,10 @@ require 'byebug'
 class Board
   attr_accessor :rows
 
+  def self.opp(color)
+    color == :w ? :b : :w
+  end
+
   def initialize
     @rows = Array.new(8) { Array.new(8) { nil } }
     set_board

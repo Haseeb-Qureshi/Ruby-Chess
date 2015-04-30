@@ -12,7 +12,7 @@ class CPU
   def initialize(game, board, color)
     @game, @color, @board = game, color, board
     @moves = 0
-    @opp = @game.opp(@color)
+    @opp = Board.opp(@color)
   end
 
   def evaluate_moves
@@ -21,7 +21,6 @@ class CPU
   end
 
   def best_move(moves)
-    p moves
     if moves.none? { |move| move.value > 0 }
       moves.sample
     else
@@ -42,6 +41,7 @@ class CPU
       # trade!(move)                                    # + 2
       # can_lead_to_self_in_check!(move)                # - 15
       # retreat_value!(move)                            # + variable
+      move.value = points
     end
   end
 
@@ -54,31 +54,32 @@ class CPU
     fake_move(move)
     if @game.in_check?(@opp) &&
       !@game.all_valid_moves(@opp).map(&:to).include?(move.to)
+      undo_move(move)
       return 23
     end
     undo_move(move)
+    0
   end
 
   def kills_greater_wo_risk(move)
+    return 4
     if @board[*move.to]
       us = PIECE_VALUES[move.piece.class]
       them = PIECE_VALUES[@board[*move.to].class]
       if them > us
-        #fake_move(move)
+        return 7
       end
     end
+    return 0
   end
 
   def kills_greater_piece(move)
-    #fake_move(move)
     if @board[*move.to]
       us = PIECE_VALUES[move.piece.class]
       them = PIECE_VALUES[@board[*move.to].class]
-      if them > us
-        move.value += (them - us) * 3
-      end
+      return (them - us) * 3 if them > us
     end
-    #undo_move(move)
+    0
   end
 
   def kills_lower_wo_risk(move)
@@ -109,11 +110,6 @@ class CPU
   end
 
   def retreat_value(move)
-    fake_move(move)
-    undo_move(move)
-  end
-
-  def kills_greater_wo_risk(move)
     fake_move(move)
     undo_move(move)
   end
