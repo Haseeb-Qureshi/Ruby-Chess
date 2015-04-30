@@ -31,15 +31,15 @@ class Human
     @board.move(from_coords, to_coords)
 ###############################################################################
   rescue InvalidError
-    puts "Invalid selection. Try again."
+    puts "Invalid selection. Try again.".colorize(color: :red).bold
     @game.reset_render
     retry
   rescue UnableError
-    puts "You can't do that."
+    puts "You can't do that.".colorize(color: :red).bold
     @game.reset_render
     retry
   rescue CheckError
-    puts "That move would put you in check. Try something else."
+    puts "That move would put you in check. Try something else.".colorize(color: :red).bold
     @game.reset_render
     retry
   end
@@ -92,7 +92,7 @@ class Human
 
   def do_function(char)
     case FUNCTIONS[char]
-    when :quit then system "clear";  puts "Thanks for playing!"; exit
+    when :quit then system "clear";  puts "Thanks for playing!".bold; exit
     when :save then @game.save!
     end
   end

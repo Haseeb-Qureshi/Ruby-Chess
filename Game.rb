@@ -1,19 +1,27 @@
 require 'io/console'
 require 'colorize'
 require 'byebug'
+require 'yaml'
 require_relative 'board'
 require_relative 'move'
 require_relative 'computer'
 require_relative 'human'
 
 #ADD PAWN PROMOTION
-#REFACTOR EVERYTHING
-#CREATE OPENING MENU
-#SAVE/LOAD STATES
+#REFACTOR DIAGONAL AND HORIZONTAL MOVEMENT
+#REWORK AI, GET AI DEBUG WORKING
 
 class Game
   attr_reader :board, :cursor
   attr_accessor :avail_moves, :captured
+
+  def self.load(file)
+    YAML.load_file(file)
+  rescue
+    system 'clear'
+    puts "Sorry, that file can't be found.".bold
+    exit
+  end
 
   def initialize
     @board = Board.new(self)
@@ -21,11 +29,16 @@ class Game
     @captured = []
     @avail_moves = []
     @cursor = [0, 0]
-    @debug = []
+    @debug = false
+    @debug_msgs = []
+  end
+
+  def start
+    welcome
+    play
   end
 
   def play
-    welcome
     render
     until game_over?
       @players.first.make_move
@@ -50,13 +63,14 @@ class Game
     @board.rows.each_with_index do |row, num|
       screen << render_row(row, num)
     end
-    puts add_indices(screen) + @debug
+    puts add_indices(screen) + @debug_msgs
   end
 
   def get_options
     puts "1 - Computer vs Computer"
     puts "2 - Human vs Computer"
     puts "3 - Human vs Human"
+    puts "4 - Load saved game"
     make_players($stdin.getch)
 
   rescue OptionsError
@@ -95,7 +109,17 @@ class Game
   end
 
   def save!
-    puts "Someday, I'll save your file! You just wait."
+    puts "Where do you want to save this? Enter a filename (with no extension)."
+    filename = gets.chomp + '.yml'
+
+    File.open(filename, 'w') do |f|
+      f.puts self.to_yaml
+    end
+
+    puts "Your game was successfully saved to #{filename}!"
+    sleep(2)
+    puts "Now resuming gameplay."
+    sleep(2)
   end
 
   def checkdebug()
@@ -118,8 +142,26 @@ class Game
     when 3
       @players << Human.new(self, @board, :w)
       @players << Human.new(self, @board, :b)
+    when 4
+      load_game_prompt
     else raise OptionsError
     end
+  end
+
+  def load_game_prompt
+    puts "What file do you want to load?"
+    puts "Enter the exact filename below."
+    load_game = Game.load(gets.chomp)
+    if load_game.is_a?(Game)
+      load_game.play
+    else
+      raise LoadingError
+    end
+
+  rescue LoadingError
+    system 'clear'
+    puts "Sorry, your save data was corrupted.".bold
+    start
   end
 
   def render_row(row, i)
@@ -164,29 +206,34 @@ class Game
   end
 
   def init_debug
-    @debug = []
-    piece = @board[*@cursor]
-    str = ''
-    if piece
-      str += "Type: #{piece.class} \n"
-      str += "Color: #{piece.color} \n"
-      str += "Pos : #{piece.pos} \n"
-      str += "Moves: #{piece.moves} \n"
-      str += "Moved?: #{piece.moved} \n"
-      str += "X_dir: #{piece.x_dir}" if piece.is_a?(Pawn)
-      str += "Diffmap: #{piece.moves_debug_diffsmap} \n" if piece.is_a?(Knight)
-      str += "Select_valids: #{piece.moves_debug_select}" if piece.is_a?(Knight)
-      str += "\n\nWhite in check?: #{@board.in_check?(:w)}\nBlack in check?: #{@board.in_check?(:b)}\n"
-      str += "Checkmate-W: #{@board.checkmate?(:w)} \nCheckmate-B?: #{@board.checkmate?(:b)}\n"
-      str += "All valid moves (#{@players.first.color}): #{@board.all_valid_moves(@players.first.color)}"
+    if @debug
+      @debug_msgs = []
+      piece = @board[*@cursor]
+      str = ''
+      if piece
+        str += "Type: #{piece.class} \n"
+        str += "Color: #{piece.color} \n"
+        str += "Pos : #{piece.pos} \n"
+        str += "Moves: #{piece.moves} \n"
+        str += "Moved?: #{piece.moved} \n"
+        str += "X_dir: #{piece.x_dir}" if piece.is_a?(Pawn)
+        str += "Diffmap: #{piece.moves_debug_diffsmap} \n" if piece.is_a?(Knight)
+        str += "Select_valids: #{piece.moves_debug_select}" if piece.is_a?(Knight)
+        str += "\n\nWhite in check?: #{@board.in_check?(:w)}\nBlack in check?: #{@board.in_check?(:b)}\n"
+        str += "Checkmate-W: #{@board.checkmate?(:w)} \nCheckmate-B?: #{@board.checkmate?(:b)}\n"
+        str += "All valid moves (#{@players.first.color}): #{@board.all_valid_moves(@players.first.color)}"
+      end
+      @debug_msgs << str
     end
-    @debug << str
   end
 end
 
 class OptionsError < StandardError
 end
 
+class LoadingError < StandardError
+end
+
 if __FILE__ == $0
-  Game.new.play
+  Game.new.start
 end
