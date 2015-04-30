@@ -1,4 +1,5 @@
 class CPU
+  attr_reader :color
 
   PIECE_VALUES = {
     Pawn => 1,
@@ -15,8 +16,15 @@ class CPU
     @opp = Board.opp(@color)
   end
 
+  def make_move
+    best_move = evaluate_moves
+    p best_move                            # DEBUG INFO
+    @board.move(best_move.from, best_move.to)
+  end
+
   def evaluate_moves
-    evaluated_moves = apply_logic_chain(@game.all_valid_moves(@color))
+    sleep(0.35 + 0.1 * rand(2))
+    evaluated_moves = apply_logic_chain(@board.all_valid_moves(@color))
     best_move(evaluated_moves)
   end
 
@@ -41,6 +49,7 @@ class CPU
       # trade!(move)                                    # + 2
       # can_lead_to_self_in_check!(move)                # - 15
       # retreat_value!(move)                            # + variable
+      # points += leads_to_checkmate(move)              # + 1000
       move.value = points
     end
   end
@@ -52,8 +61,8 @@ class CPU
 
   def puts_in_check_wo_risk(move)
     fake_move(move)
-    if @game.in_check?(@opp) &&
-      !@game.all_valid_moves(@opp).map(&:to).include?(move.to)
+    if @board.in_check?(@opp) &&
+      !@board.all_valid_moves(@opp).map(&:to).include?(move.to)
       undo_move(move)
       return 23
     end

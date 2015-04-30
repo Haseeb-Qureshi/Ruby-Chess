@@ -4,6 +4,7 @@ require 'byebug'
 require_relative 'board'
 require_relative 'move'
 require_relative 'computer'
+require_relative 'human'
 
 #ADD PAWN PROMOTION
 #REFACTOR EVERYTHING
@@ -11,24 +12,23 @@ require_relative 'computer'
 #SAVE/LOAD STATES
 
 class Game
-  attr_reader :board
-  attr_writer :avail_moves
+  attr_reader :board, :cursor
+  attr_accessor :avail_moves, :captured
 
   def initialize
-    @board = Board.new
-    @players = [:w, :b]
+    @board = Board.new(self)
+    @players = []
     @captured = []
     @avail_moves = []
-    @debug = []
     @cursor = [0, 0]
-    @cpu = CPU.new(self, @board, :b)
+    @debug = []
   end
 
   def play
     welcome
     render
     until game_over?
-      player_move(@players.first)
+      @players.first.make_move
       @players.rotate!
       render
     end
@@ -36,12 +36,12 @@ class Game
   end
 
   def welcome
-    puts "Welcome to chess! White goes first."
+    puts "Welcome to chess! Select your mode."
+    get_options
   end
 
-  def game_over_message
-    winner = @players.last == :w ? "White" : "Black"
-    puts "Checkmate! #{winner} won!".colorize(color: :yellow).bold
+  def game_over?
+    @board.checkmate?(@players.first.color)
   end
 
   def render
@@ -53,28 +53,26 @@ class Game
     puts add_indices(screen) + @debug
   end
 
-  def player_move(color)
-    return computer_move if @players.first == :b ###CHANGE THIS LATER
-    #Move Human or Move Computer
+  def get_options
+    puts "1 - Computer vs Computer"
+    puts "2 - Human vs Computer"
+    puts "3 - Human vs Human"
+    make_players($stdin.getch)
+
+  rescue OptionsError
+    system 'clear'
+    welcome
+  end
+
+  def game_over_message
+    winner = @players.last.color == :w ? "White" : "Black"
+    puts "Checkmate! #{winner} won!".colorize(color: :yellow).bold
   end
 
   def reset_render
     sleep(1)
     @avail_moves = []
     render
-  end
-
-  def move(from_coords, to_coords) #Board class
-    there = @board[*to_coords]
-    piece = @board[*from_coords]
-    @captured << there if there
-
-    @board[*from_coords] = nil
-    @board[*to_coords] = piece
-    piece.pos = to_coords
-
-    @avail_moves = []
-    piece.moved = true
   end
 
   def update_cursor(move)
@@ -84,69 +82,16 @@ class Game
     @cursor = [x + dx, y + dy]
   end
 
-  def valid_input?(char) #Human class
-    charsym = char
-    return false unless INPUT.has_key?(charsym)
-    x, y = @cursor
-    dx, dy = INPUT[charsym]
-    (x + dx).between?(0, 7) && (y + dy).between?(0, 7)
-  end
-
-  def in_check?(color) #Board class
-    all = @board.pieces(Board.opp(color)).inject([]) do |all_moves, piece|
-      all_moves + piece.moves
-    end
-
-    all.include?(@board.king(color).pos)
-  end
-
-  def puts_in_check?(from_coords, to_coords, color) #Board class
-    there = @board[*to_coords]
-    piece = @board[*from_coords]
-    @board[*from_coords] = nil
-    @board[*to_coords] = piece
-    piece.pos = to_coords
-
-    check = in_check?(color)
-
-    @board[*to_coords] = there
-    @board[*from_coords] = piece
-    piece.pos = from_coords
-
-    check
-  end
-
-  def checkmate?(color) #Board class
-    @board.pieces(color).all? do |piece|
-      piece.moves.all? do |move|
-        # piece.moving_into_check?(move)
-        puts_in_check?(piece.pos, move, color)
+  def show_avail_moves(piece)
+    if piece && piece.color == @players.first.color
+      @avail_moves = piece.moves.select do |potential_move|
+        @board.all_valid_moves(@players.first.color).select do |move_obj|
+          move_obj.piece == piece
+        end.map(&:to).include?(potential_move)
       end
+    else
+      @avail_moves = []
     end
-  end
-
-  def game_over?
-    checkmate?(@players.first)
-  end
-
-  def invalid_move?(from_coords, to_coords)
-    !@board[*from_coords].moves.include?(to_coords)
-  end
-
-  def all_valid_moves(color) #Board class
-    @board.pieces(color).inject([]) do |all, piece|
-      all + piece.moves.select { |move| !puts_in_check?(piece.pos, move, color) }.map do |move|
-        Move.new(piece.pos, move, piece)
-      end
-    end.uniq
-  end
-
-  def computer_move #Board class
-    best_move = @cpu.evaluate_moves
-    p best_move
-    p @board[*best_move.from]
-    p @board[*best_move.to]
-    move(best_move.from, best_move.to)
   end
 
   def save!
@@ -162,14 +107,32 @@ class Game
 
   private
 
+  def make_players(num)
+    case num.to_i
+    when 1
+      @players << CPU.new(self, @board, :w)
+      @players << CPU.new(self, @board, :b)
+    when 2
+      @players << Human.new(self, @board, :w)
+      @players << CPU.new(self, @board, :b)
+    when 3
+      @players << Human.new(self, @board, :w)
+      @players << Human.new(self, @board, :b)
+    else raise OptionsError
+    end
+  end
+
   def render_row(row, i)
-    this_line = row.inject("").with_index do |line, piece, j|
+    j = 0
+    this_line = row.inject("") do |line, piece|
       here = [i, j]
-      line + construct_square(here)
+      j += 1
+      line + construct_square(here, piece)
     end
     this_line << captured_pieces(:w) if i == 0
     this_line << captured_pieces(:b).colorize(color: :blue) if i == 7
-    this_line << "   Check!" if i == 4 && @players.any? { |c| in_check?(c) }
+    this_line << "   Check!" if i == 4 && @players.map(&:color).any? { |c| @board.in_check?(c) }
+    this_line
   end
 
   def captured_pieces(color)
@@ -177,10 +140,10 @@ class Game
     "  " + line.join(" ")
   end
 
-  def construct_square(here)
+  def construct_square(here, piece)
     background = here.inject(:+).even? ? :light_red : :light_cyan
     piece_img = piece ? piece.to_s : " "
-    square = " #{render_piece}  ".colorize(background: background)
+    square = " #{piece_img}  ".colorize(background: background)
 
 
     if @avail_moves.include?(here)
@@ -189,14 +152,15 @@ class Game
     if here == @cursor
       square = square.colorize(background: :yellow)
     end
+    square
   end
 
   def add_indices(rendered)
     rendered.map!.with_index do |line, i|
       " #{8 - i} " + line
     end
-    letters = ('a'..'h').to_a.map { |l| " #{l} " }
-    rendered << "   " + letters.join
+    letters = ('a'..'h').to_a.map { |l| "  #{l} " }
+    rendered << "  " + letters.join
   end
 
   def init_debug
@@ -212,12 +176,15 @@ class Game
       str += "X_dir: #{piece.x_dir}" if piece.is_a?(Pawn)
       str += "Diffmap: #{piece.moves_debug_diffsmap} \n" if piece.is_a?(Knight)
       str += "Select_valids: #{piece.moves_debug_select}" if piece.is_a?(Knight)
-      str += "\n\nWhite in check?: #{in_check?(:w)}\nBlack in check?: #{in_check?(:b)}\n"
-      str += "Checkmate-W: #{checkmate?(:w)} \nCheckmate-B?: #{checkmate?(:b)}\n"
-      str += "All valid moves (#{@players.first}): #{all_valid_moves(@players.first)}"
+      str += "\n\nWhite in check?: #{@board.in_check?(:w)}\nBlack in check?: #{@board.in_check?(:b)}\n"
+      str += "Checkmate-W: #{@board.checkmate?(:w)} \nCheckmate-B?: #{@board.checkmate?(:b)}\n"
+      str += "All valid moves (#{@players.first.color}): #{@board.all_valid_moves(@players.first.color)}"
     end
     @debug << str
   end
+end
+
+class OptionsError < StandardError
 end
 
 if __FILE__ == $0
