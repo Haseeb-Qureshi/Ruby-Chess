@@ -1,11 +1,15 @@
+require 'io/console'
 require_relative 'board'
+require_relative 'move.rb'
+require_relative 'computer.rb'
 require 'colorize'
 require 'byebug'
 
-# CHECK_MATE?
-# CREATE AN ARRAY OF ALL CAPTURES FOR EACH PLAYER
+#ADD PAWN PROMOTION
+#REFACTOR EVERYTHING
 
 class Game
+  attr_reader :board
   INPUT = {
     "w" => [-1, 0],
     "a" => [0, -1],
@@ -21,6 +25,7 @@ class Game
     @cursor = [0, 0]
     @avail_moves = []
     @debug = []
+    @cpu = CPU.new(self, @board, :b)
   end
 
   def debug
@@ -28,27 +33,28 @@ class Game
     piece = @board[*@cursor]
     str = ''
     if piece
-      str += "Type: #{piece.class} \n"
-      str += "Color: #{piece.color} \n"
-      str += "Pos : #{piece.pos} \n"
-      str += "Moves: #{piece.moves} \n"
-      str += "Moved?: #{piece.moved} \n"
-      str += "X_dir: #{piece.x_dir}" if piece.is_a?(Pawn)
-      str += "Diffmap: #{piece.moves_debug_diffsmap} \n" if piece.is_a?(Knight)
-      str += "Select_valids: #{piece.moves_debug_select}" if piece.is_a?(Knight)
-      str += "\n\nWhite in check?: #{in_check?(:w)}\nBlack in check?: #{in_check?(:b)}\n"
-      str += "Checkmate-W: #{checkmate?(:w)} \nCheckmate-B?: #{checkmate?(:b)}"
+      # str += "Type: #{piece.class} \n"
+      # str += "Color: #{piece.color} \n"
+      # str += "Pos : #{piece.pos} \n"
+      # str += "Moves: #{piece.moves} \n"
+      # str += "Moved?: #{piece.moved} \n"
+      # str += "X_dir: #{piece.x_dir}" if piece.is_a?(Pawn)
+      # str += "Diffmap: #{piece.moves_debug_diffsmap} \n" if piece.is_a?(Knight)
+      # str += "Select_valids: #{piece.moves_debug_select}" if piece.is_a?(Knight)
+      # str += "\n\nWhite in check?: #{in_check?(:w)}\nBlack in check?: #{in_check?(:b)}\n"
+      # str += "Checkmate-W: #{checkmate?(:w)} \nCheckmate-B?: #{checkmate?(:b)}"
+      str += "All valid moves (#{@players.first}): #{all_valid_moves(@players.first)}"
     end
-    #@debug << str
+    @debug << str
   end
 
   def play
     welcome
-    puts render_game
+    puts render
     until game_over?
       player_move(@players.first)
-      @players = @players.rotate(1)
-      puts render_game
+      @players.rotate!
+      puts render
     end
     game_over_message
   end
@@ -62,8 +68,7 @@ class Game
     puts "#{winner} won the game!".colorize(color: :yellow).bold
   end
 
-  def render_game
-    sleep(0.1)
+  def render
     system 'clear'
     rendered = []
     @board.rows.each_with_index do |row, i|
@@ -72,9 +77,9 @@ class Game
       row.each_with_index do |piece, j|
         render_piece = piece ? piece.to_s : " "
         bg = (i + j).even? ? :light_red : :light_cyan
-        square = " #{render_piece} ".colorize(background: bg)
-        square = square.swap if [i, j] == @cursor #swap
-        square = square.colorize(background: :yellow) if
+        square = " #{render_piece}  ".colorize(background: bg)
+        square = square.colorize(background: :yellow) if [i, j] == @cursor
+        square = square.colorize(background: :light_green) if
                             @avail_moves.include?([i, j])
         this_line += square
       end
@@ -92,6 +97,7 @@ class Game
   end
 
   def player_move(color)
+    return computer_move if @players.first == :b ###CHANGE THIS LATER
     from_coords = move_from(color)
     piece = @board[*from_coords]
 
@@ -100,26 +106,24 @@ class Game
     raise CheckError if puts_in_check?(from_coords, to_coords, color)
 
     move(from_coords, to_coords)
-  rescue ArgumentError
+  rescue InvalidError
     puts "Invalid selection. Try again."
-    sleep(1)
     reset_render
     retry
   rescue UnableError
     puts "You can't do that."
-    sleep(1)
     reset_render
     retry
   rescue CheckError
     puts "That move would put you in check."
-    sleep(1)
     reset_render
     retry
   end
 
   def reset_render
+    sleep(1)
     @avail_moves = []
-    puts render_game
+    puts render
   end
 
   def move(from_coords, to_coords)
@@ -138,6 +142,7 @@ class Game
   def move_from(my_color)
     loop do
       puts "Use W-A-S-D to navigate to a piece. Press enter to select."
+      puts "'q' to quit." # TA: implement this.... (`exit`)
       valid_key = false
       until valid_key
         key = $stdin.getch.downcase
@@ -151,10 +156,10 @@ class Game
       else
         @avail_moves = []
       end
-      puts render_game
+      puts render
 
       if key == "\r"
-        raise ArgumentError unless piece && piece.color == my_color
+        raise InvalidError unless piece && piece.color == my_color
         raise UnableError if piece.moves.empty?
         break
       end
@@ -172,7 +177,7 @@ class Game
       end
 
       update_cursor(key)
-      puts render_game
+      puts render
       if key == "\r"
         piece = @board[*@cursor]
         raise UnableError if !@avail_moves.include?(@cursor)
@@ -228,6 +233,7 @@ class Game
   def checkmate?(color)
     @board.pieces(color).all? do |piece|
       piece.moves.all? do |move|
+        # piece.moving_into_check?(move)
         puts_in_check?(piece.pos, move, color)
       end
     end
@@ -256,11 +262,18 @@ class Game
     play
   end
 
-  # def all_valid_moves(color)
-  #   @board.pieces(color).inject
-  #
-  #   end
-  # end
+  def all_valid_moves(color)
+    @board.pieces(color).inject([]) do |all, piece|
+      all + piece.moves.select { |move| !puts_in_check?(piece.pos, move, color) }.map do |move|
+        Move.new(piece.pos, move, piece)
+      end
+    end.uniq
+  end
+
+  def computer_move
+    best_move = @cpu.evaluate_moves
+    move(best_move.from, best_move.to)
+  end
 
 
 end

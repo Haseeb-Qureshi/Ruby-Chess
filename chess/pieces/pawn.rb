@@ -20,11 +20,14 @@ class Pawn < Piece
   def has_moved
     x, y = @pos
     moves_arr = []
-    moves_arr << [x + @x_dir, y] unless @board[x + @x_dir, y]
-    moves_arr << [x + @x_dir, y - 1] if @board[x + @x_dir, y - 1] &&
-                           @board[x + @x_dir, y - 1].color != @color
-    moves_arr << [x + @x_dir, y + 1] if @board[x + @x_dir, y + 1] &&
-                           @board[x + @x_dir, y + 1].color != @color
+    newx = x + @x_dir
+    if on_board?([newx, y])
+      moves_arr << [newx, y] unless @board[newx, y]
+      moves_arr << [newx, y - 1] if @board[newx, y - 1] &&
+                           @board[newx, y - 1].color != @color
+      moves_arr << [newx, y + 1] if @board[newx, y + 1] &&
+                           @board[newx, y + 1].color != @color
+    end
     moves_arr
   end
 

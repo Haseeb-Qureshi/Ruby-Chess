@@ -48,9 +48,9 @@ class Board
   end
 
   def royalty
-    [Rook.new(self), Knight.new(self), Bishop.new(self),
-     Queen.new(self), King.new(self), Bishop.new(self),
-     Knight.new(self), Rook.new(self)]
+    [Rook, Knight, Bishop, Queen, King, Bishop, Knight, Rook].map do |klass|
+      klass.new(self)
+    end
   end
 
   def set_row(row, row_num, color)
