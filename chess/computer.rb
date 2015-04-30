@@ -31,10 +31,11 @@ class CPU
 
   def apply_logic_chain(moves)
     moves.each do |move|
-      dumb_select!(move)
-      puts_in_check_wo_risk!(move)                    # + 20
-      kills_greater_wo_risk!(move)                    # + 30
-      kills_greater_piece!(move)                      # + 20
+      points = 0
+      points += dumb_select(move)
+      points += puts_in_check_wo_risk(move)                    # + 20
+      points += kills_greater_wo_risk(move)                    # + 30
+      points += kills_greater_piece(move)                      # + 20
       # kills_lower_wo_risk!(move)                      # + 10
       # develops_pieces!(move)                          # + 3
       # pawn_formation!(move)                           # + 2
@@ -44,49 +45,55 @@ class CPU
     end
   end
 
-  def dumb_select!(move)
-    move.value += 1 if @board[*move.to] && @board[*move.to].color == @opp
+  def dumb_select(move)
+    return 1 if @board[*move.to] && @board[*move.to].color == @opp
+    0
   end
 
-  def puts_in_check_wo_risk!(move)
+  def puts_in_check_wo_risk(move)
     fake_move(move)
     if @game.in_check?(@opp) &&
       !@game.all_valid_moves(@opp).map(&:to).include?(move.to)
-      move.value += 23
+      return 23
     end
     undo_move(move)
   end
 
   def kills_greater_wo_risk(move)
-  end
-
-  def kills_greater_piece!(move)
-    fake_move(move)
     if @board[*move.to]
       us = PIECE_VALUES[move.piece.class]
       them = PIECE_VALUES[@board[*move.to].class]
-      puts "KILLING GREATER PIECE us #{us} them: #{them}"
       if them > us
-        puts "inside IF statement"
-        move.value += (them - us) * 5
+        #fake_move(move)
       end
     end
-    undo_move(move)
   end
 
-  def kills_lower_wo_risk!(move)
+  def kills_greater_piece(move)
+    #fake_move(move)
+    if @board[*move.to]
+      us = PIECE_VALUES[move.piece.class]
+      them = PIECE_VALUES[@board[*move.to].class]
+      if them > us
+        move.value += (them - us) * 3
+      end
+    end
+    #undo_move(move)
+  end
+
+  def kills_lower_wo_risk(move)
     fake_move(move)
 
     undo_move(move)
   end
 
-  def develops_pieces!(move)
+  def develops_pieces(move)
     fake_move(move)
 
     undo_move(move)
   end
 
-  def pawn_formation!(move)
+  def pawn_formation(move)
     fake_move(move)
     undo_move(move)
   end
@@ -96,17 +103,17 @@ class CPU
     undo_move(move)
   end
 
-  def can_lead_to_self_in_check!(move)
+  def can_lead_to_self_in_check(move)
     fake_move(move)
     undo_move(move)
   end
 
-  def retreat_value!(move)
+  def retreat_value(move)
     fake_move(move)
     undo_move(move)
   end
 
-  def kills_greater_wo_risk!(move)
+  def kills_greater_wo_risk(move)
     fake_move(move)
     undo_move(move)
   end
