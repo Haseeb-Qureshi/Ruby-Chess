@@ -41,7 +41,7 @@ class Game
   def play
     render
     until game_over?
-      @players.first.make_move
+      current_player.make_move
       @players.rotate!
       render
     end
@@ -54,7 +54,7 @@ class Game
   end
 
   def game_over?
-    @board.checkmate?(@players.first.color)
+    @board.checkmate?(current_player.color)
   end
 
   def render
@@ -97,9 +97,9 @@ class Game
   end
 
   def show_avail_moves(piece)
-    if piece && piece.color == @players.first.color
+    if piece && piece.color == current_player.color
       @avail_moves = piece.moves.select do |potential_move|
-        @board.all_valid_moves(@players.first.color).select do |move_obj|
+        @board.all_valid_moves(current_player.color).select do |move_obj|
           move_obj.piece == piece
         end.map(&:to).include?(potential_move)
       end
@@ -122,14 +122,11 @@ class Game
     sleep(2)
   end
 
-  def checkdebug()
-    move([6, 5], [5, 5])
-    move([1, 4], [3, 4])
-    move([6, 6], [4, 6])
-    play
-  end
-
   private
+
+  def current_player
+    @players.first
+  end
 
   def make_players(num)
     case num.to_i
@@ -221,7 +218,7 @@ class Game
         str += "Select_valids: #{piece.moves_debug_select}" if piece.is_a?(Knight)
         str += "\n\nWhite in check?: #{@board.in_check?(:w)}\nBlack in check?: #{@board.in_check?(:b)}\n"
         str += "Checkmate-W: #{@board.checkmate?(:w)} \nCheckmate-B?: #{@board.checkmate?(:b)}\n"
-        str += "All valid moves (#{@players.first.color}): #{@board.all_valid_moves(@players.first.color)}"
+        str += "All valid moves (#{current_player.color}): #{@board.all_valid_moves(current_player.color)}"
       end
       @debug_msgs << str
     end
