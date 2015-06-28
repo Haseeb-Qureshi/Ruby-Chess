@@ -54,6 +54,11 @@ class Board
     pieces(color).find { |piece| piece.is_a?(King) }
   end
 
+  def valid_pos?(pos)
+    x, y = pos
+    x.between?(0, 7) && y.between?(0, 7)
+  end
+
   ################
 
   def in_check?(color)
@@ -99,6 +104,10 @@ class Board
       end.map { |move| Move.new(piece.pos, move, piece) }
     end
     all_moves.uniq
+  end
+
+  def empty?(pos)
+    self[*pos].nil?
   end
 
   ##########

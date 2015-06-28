@@ -9,6 +9,8 @@ module DiscreteMoveable
     end
   end
 
+  # debug
+
   def moves_debug_diffsmap
     move_diffs.map do |x, y|
       [x + @pos.first, y + @pos.last]

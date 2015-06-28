@@ -1,5 +1,4 @@
-require_relative './movements/horizontal'
-require_relative './movements/diagonal'
+require_relative './movements/slideable'
 require_relative './movements/discrete'
 
 require_relative 'piece.rb'

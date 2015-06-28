@@ -101,7 +101,7 @@ class Human
     return false unless MOVEMENT.has_key?(char)
     x, y = @game.cursor
     dx, dy = MOVEMENT[char]
-    (x + dx).between?(0, 7) && (y + dy).between?(0, 7)
+    @board.valid_pos?([x + dx, y + dy])
   end
 
   def fake_move(move)

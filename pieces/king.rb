@@ -1,5 +1,3 @@
-require_relative './movements/discrete'
-
 class King < Piece
   KING_MOVE_DIFFS = [1, 1, 0, -1, -1].permutation(2).to_a.uniq!
   include DiscreteMoveable

@@ -1,13 +1,14 @@
-require_relative './movements/diagonal'
-
 class Bishop < Piece
-  include Diagonalable
-
-  def moves
-    d_moves
-  end
+  include Slideable
 
   def to_s
     color == :b ? "♝".colorize(:black) : "♝".colorize(:white)
   end
+
+  protected
+
+  def move_dirs
+    diagonal_dirs
+  end
+
 end

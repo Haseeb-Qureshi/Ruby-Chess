@@ -1,13 +1,13 @@
-require_relative './movements/horizontal'
-
 class Rook < Piece
-  include Horizontalable
-
-  def moves
-    h_moves
-  end
+  include Slideable
 
   def to_s
     color == :b ? "♜".colorize(:black) : "♜".colorize(:white)
+  end
+
+  protected
+
+  def move_dirs
+    horizontal_dirs
   end
 end

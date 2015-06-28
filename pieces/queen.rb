@@ -1,15 +1,13 @@
-require_relative './movements/horizontal'
-require_relative './movements/diagonal'
-
 class Queen < Piece
-  include Diagonalable
-  include Horizontalable
-
-  def moves
-    h_moves + d_moves
-  end
+  include Slideable
 
   def to_s
     color == :b ? "♛".colorize(:black) : "♛".colorize(:white)
+  end
+
+  protected
+
+  def move_dirs
+    diagonal_dirs + horizontal_dirs
   end
 end
