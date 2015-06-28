@@ -7,8 +7,8 @@ require_relative 'move'
 require_relative 'computer'
 require_relative 'human'
 
+#ADD DISPLAY CLASS, CHANGE DISPLAY TO BE MORE LIKE CHECKERS
 #ADD PAWN PROMOTION
-#REFACTOR DIAGONAL AND HORIZONTAL MOVEMENT
 #REWORK AI, GET AI DEBUG WORKING
 
 class Game
@@ -29,7 +29,7 @@ class Game
     @captured = []
     @avail_moves = []
     @cursor = [0, 0]
-    @debug = false
+    @debug = false        # turns on debug menu
     @debug_msgs = []
   end
 
@@ -90,7 +90,7 @@ class Game
   end
 
   def update_cursor(move)
-    init_debug                            #Can remove init_debug later
+    init_debug           # reinitializes debug information
     x, y = @cursor
     dx, dy = move
     @cursor = [x + dx, y + dy]
