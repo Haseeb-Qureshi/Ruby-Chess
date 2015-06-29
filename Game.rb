@@ -8,11 +8,11 @@ require_relative 'computer'
 require_relative 'human'
 require_relative 'display'
 
-#ADD PAWN PROMOTION
-#REWORK AI, GET AI DEBUG WORKING
+# TODO: ADD PAWN PROMOTION
+# TODO: REWORK AI, GET AI DEBUG WORKING
 
 class Game
-  attr_reader :board, :cursor, :players, :any_human
+  attr_reader :board, :cursor, :players, :all_cpu
   attr_accessor :avail_moves, :captured
 
   def self.load(file)
@@ -122,7 +122,7 @@ class Game
     when 1
       @players << CPU.new(self, @board, :w)
       @players << CPU.new(self, @board, :b)
-      @any_human = false
+      @all_cpu = true
     when 2
       @players << Human.new(self, @board, :w)
       @players << CPU.new(self, @board, :b)

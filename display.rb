@@ -28,23 +28,23 @@ class Display
     init_debug           # reinitializes debug information
   end
 
+  def show_avail_moves(piece)
+    if piece && piece.color == @game.current_player.color
+      @avail_moves = piece.moves.select do |potential_move|
+        @board.all_valid_moves(@game.current_player.color).select do |move|
+          move.piece == piece
+        end.map(&:to).include?(potential_move)
+      end
+    else
+      @avail_moves = []
+    end
+  end
+
   private
 
   def construct_rows
     @board.rows.map.with_index do |row, num|
       render_row(row, num)
-    end
-  end
-
-  def show_avail_moves(piece)
-    if piece && piece.color == @game.current_player.color
-      @avail_moves = piece.moves.select do |potential_move|
-        @board.all_valid_moves(@game.current_player.color).select do |move_obj|
-          move_obj.piece == piece
-        end.map(&:to).include?(potential_move)
-      end
-    else
-      @avail_moves = []
     end
   end
 
@@ -76,7 +76,7 @@ class Display
       square = square.colorize(background: avail_bg)
     end
     if here == @cursor
-      square = square.colorize(background: :magenta) if @game.any_human
+      square = square.colorize(background: :magenta) unless @game.all_cpu
     end
     square
   end
