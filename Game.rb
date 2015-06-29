@@ -6,13 +6,14 @@ require_relative 'board'
 require_relative 'move'
 require_relative 'computer'
 require_relative 'human'
+require_relative 'display'
 
 #ADD DISPLAY CLASS, CHANGE DISPLAY TO BE MORE LIKE CHECKERS
 #ADD PAWN PROMOTION
 #REWORK AI, GET AI DEBUG WORKING
 
 class Game
-  attr_reader :board, :cursor
+  attr_reader :board, :cursor, :players
   attr_accessor :avail_moves, :captured
 
   def self.load(file)
@@ -24,13 +25,11 @@ class Game
   end
 
   def initialize
-    @board = Board.new(self)
+    @debug = false        # turns on debug menu
     @players = []
     @captured = []
-    @avail_moves = []
-    @cursor = [0, 0]
-    @debug = false        # turns on debug menu
-    @debug_msgs = []
+    @board = Board.new(self)
+    @display = Display.new(self, @debug)
   end
 
   def start
@@ -58,12 +57,7 @@ class Game
   end
 
   def render
-    system 'clear'
-    screen = []
-    @board.rows.each_with_index do |row, num|
-      screen << render_row(row, num)
-    end
-    puts add_indices(screen) + @debug_msgs
+    @display.render
   end
 
   def get_options
@@ -71,7 +65,7 @@ class Game
     puts "2 - Human vs Computer"
     puts "3 - Human vs Human"
     puts "4 - Load saved game"
-    make_players($stdin.getch)
+    make_players()
 
   rescue OptionsError
     system 'clear'
@@ -84,29 +78,18 @@ class Game
   end
 
   def reset_render
-    sleep(1)
-    @avail_moves = []
-    render
+    @display.reset_render
   end
 
   def update_cursor(move)
-    init_debug           # reinitializes debug information
-    x, y = @cursor
-    dx, dy = move
-    @cursor = [x + dx, y + dy]
+    @display.update_cursor(move)
   end
 
   def show_avail_moves(piece)
-    if piece && piece.color == current_player.color
-      @avail_moves = piece.moves.select do |potential_move|
-        @board.all_valid_moves(current_player.color).select do |move_obj|
-          move_obj.piece == piece
-        end.map(&:to).include?(potential_move)
-      end
-    else
-      @avail_moves = []
-    end
+    @display.show_avail_moves(piece)
   end
+
+  private
 
   def save!
     puts "Where do you want to save this? Enter a filename (with no extension)."
@@ -122,14 +105,13 @@ class Game
     sleep(2)
   end
 
-  private
-
   def current_player
     @players.first
   end
 
-  def make_players(num)
-    case num.to_i
+  def make_players()
+    option = $stdin.getch
+    case option.to_i
     when 1
       @players << CPU.new(self, @board, :w)
       @players << CPU.new(self, @board, :b)
@@ -159,69 +141,6 @@ class Game
     system 'clear'
     puts "Sorry, your save data was corrupted.".bold
     start
-  end
-
-  def render_row(row, i)
-    j = 0
-    this_line = row.inject("") do |line, piece|
-      here = [i, j]
-      j += 1
-      line + construct_square(here, piece)
-    end
-    this_line << captured_pieces(:w) if i == 0
-    this_line << captured_pieces(:b).colorize(color: :blue) if i == 7
-    this_line << "   Check!" if i == 4 && @players.map(&:color).any? { |c| @board.in_check?(c) }
-    this_line
-  end
-
-  def captured_pieces(color)
-    line = @captured.select { |piece| piece.color == color }
-    "  " + line.join(" ")
-  end
-
-  def construct_square(here, piece)
-    background = here.inject(:+).even? ? :light_red : :light_cyan
-    piece_img = piece ? piece.to_s : " "
-    square = " #{piece_img}  ".colorize(background: background)
-
-
-    if @avail_moves.include?(here)
-       square = square.colorize(background: :light_green)
-     end
-    if here == @cursor
-      square = square.colorize(background: :yellow)
-    end
-    square
-  end
-
-  def add_indices(rendered)
-    rendered.map!.with_index do |line, i|
-      " #{8 - i} " + line
-    end
-    letters = ('a'..'h').to_a.map { |l| "  #{l} " }
-    rendered << "  " + letters.join
-  end
-
-  def init_debug
-    if @debug
-      @debug_msgs = []
-      piece = @board[*@cursor]
-      str = ''
-      if piece
-        str += "Type: #{piece.class} \n"
-        str += "Color: #{piece.color} \n"
-        str += "Pos : #{piece.pos} \n"
-        str += "Moves: #{piece.moves} \n"
-        str += "Moved?: #{piece.moved} \n"
-        str += "X_dir: #{piece.x_dir}" if piece.is_a?(Pawn)
-        str += "Diffmap: #{piece.moves_debug_diffsmap} \n" if piece.is_a?(Knight)
-        str += "Select_valids: #{piece.moves_debug_select}" if piece.is_a?(Knight)
-        str += "\n\nWhite in check?: #{@board.in_check?(:w)}\nBlack in check?: #{@board.in_check?(:b)}\n"
-        str += "Checkmate-W: #{@board.checkmate?(:w)} \nCheckmate-B?: #{@board.checkmate?(:b)}\n"
-        str += "All valid moves (#{current_player.color}): #{@board.all_valid_moves(current_player.color)}"
-      end
-      @debug_msgs << str
-    end
   end
 end
 
