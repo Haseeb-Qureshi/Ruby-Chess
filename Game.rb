@@ -24,11 +24,11 @@ class Game
   end
 
   def initialize
-    @debug = true        # turns on debug menu
+    @activate_debug = false
     @players = []
     @captured = []
     @board = Board.new(self)
-    @display = Display.new(self, @debug)
+    @display = Display.new(self, @activate_debug)
   end
 
   def start
