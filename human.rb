@@ -50,7 +50,7 @@ class Human
       input = get_input
       @game.update_cursor(MOVEMENT[input])
 
-      piece = @board[*@game.cursor]
+      piece = @board[*@game.get_cursor]
       @game.show_avail_moves(piece)
       @game.render
 
@@ -60,7 +60,7 @@ class Human
         choice = true
       end
     end
-    @game.cursor.dup
+    @game.get_cursor.dup
   end
 
   def get_move_to
@@ -71,11 +71,11 @@ class Human
       @game.render
 
       if MOVEMENT[input] == [0, 0]
-        raise UnableError if !@game.avail_moves.include?(@game.cursor)
+        raise UnableError if !@game.avail_moves.include?(@game.get_cursor)
         choice = true
       end
     end
-    @game.cursor.dup
+    @game.get_cursor.dup
   end
 
   def get_input
@@ -99,7 +99,7 @@ class Human
 
   def movement?(char)
     return false unless MOVEMENT.has_key?(char)
-    x, y = @game.cursor
+    x, y = @game.get_cursor
     dx, dy = MOVEMENT[char]
     @board.valid_pos?([x + dx, y + dy])
   end

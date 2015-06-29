@@ -8,12 +8,11 @@ require_relative 'computer'
 require_relative 'human'
 require_relative 'display'
 
-#ADD DISPLAY CLASS, CHANGE DISPLAY TO BE MORE LIKE CHECKERS
 #ADD PAWN PROMOTION
 #REWORK AI, GET AI DEBUG WORKING
 
 class Game
-  attr_reader :board, :cursor, :players
+  attr_reader :board, :cursor, :players, :any_human
   attr_accessor :avail_moves, :captured
 
   def self.load(file)
@@ -25,7 +24,7 @@ class Game
   end
 
   def initialize
-    @debug = false        # turns on debug menu
+    @debug = true        # turns on debug menu
     @players = []
     @captured = []
     @board = Board.new(self)
@@ -89,6 +88,18 @@ class Game
     @display.show_avail_moves(piece)
   end
 
+  def avail_moves
+    @display.avail_moves
+  end
+
+  def get_cursor
+    @display.cursor
+  end
+
+  def current_player
+    @players.first
+  end
+
   private
 
   def save!
@@ -105,16 +116,13 @@ class Game
     sleep(2)
   end
 
-  def current_player
-    @players.first
-  end
-
   def make_players()
     option = $stdin.getch
     case option.to_i
     when 1
       @players << CPU.new(self, @board, :w)
       @players << CPU.new(self, @board, :b)
+      @any_human = false
     when 2
       @players << Human.new(self, @board, :w)
       @players << CPU.new(self, @board, :b)

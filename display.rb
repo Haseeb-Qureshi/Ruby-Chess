@@ -1,7 +1,8 @@
 class Display
+  attr_reader :cursor, :avail_moves
   def initialize(game, debug)
     @game = game
-    @board = game.board
+    @board = @game.board
     @debug = debug
     @avail_moves = []
     @cursor = [0, 0]
@@ -11,11 +12,7 @@ class Display
 
   def render
     system 'clear'
-    screen = []
-    @board.rows.each_with_index do |row, num|
-      screen << render_row(row, num)
-    end
-    puts add_indices(screen) + @debug_msgs
+    puts add_indices(construct_rows) + @debug_msgs
   end
 
   def reset_render
@@ -25,16 +22,24 @@ class Display
   end
 
   def update_cursor(move)
-    init_debug           # reinitializes debug information
     x, y = @cursor
     dx, dy = move
     @cursor = [x + dx, y + dy]
+    init_debug           # reinitializes debug information
+  end
+
+  private
+
+  def construct_rows
+    @board.rows.map.with_index do |row, num|
+      render_row(row, num)
+    end
   end
 
   def show_avail_moves(piece)
-    if piece && piece.color == current_player.color
+    if piece && piece.color == @game.current_player.color
       @avail_moves = piece.moves.select do |potential_move|
-        @board.all_valid_moves(current_player.color).select do |move_obj|
+        @board.all_valid_moves(@game.current_player.color).select do |move_obj|
           move_obj.piece == piece
         end.map(&:to).include?(potential_move)
       end
@@ -62,16 +67,16 @@ class Display
   end
 
   def construct_square(here, piece)
-    background = here.inject(:+).even? ? :light_red : :light_cyan
+    background = here.inject(:+).even? ? :light_red : :cyan
     piece_img = piece ? piece.to_s : " "
     square = " #{piece_img}  ".colorize(background: background)
 
-
     if @avail_moves.include?(here)
-       square = square.colorize(background: :light_green)
-     end
+      avail_bg = piece && piece.color != @game.current_player.color ? :light_green : :yellow
+      square = square.colorize(background: avail_bg)
+    end
     if here == @cursor
-      square = square.colorize(background: :yellow)
+      square = square.colorize(background: :magenta) if @game.any_human
     end
     square
   end
@@ -100,7 +105,7 @@ class Display
         str += "Select_valids: #{piece.moves_debug_select}" if piece.is_a?(Knight)
         str += "\n\nWhite in check?: #{@board.in_check?(:w)}\nBlack in check?: #{@board.in_check?(:b)}\n"
         str += "Checkmate-W: #{@board.checkmate?(:w)} \nCheckmate-B?: #{@board.checkmate?(:b)}\n"
-        str += "All valid moves (#{current_player.color}): #{@board.all_valid_moves(current_player.color)}"
+        str += "All valid moves (#{@game.current_player.color}): #{@board.all_valid_moves(@game.current_player.color)}"
       end
       @debug_msgs << str
     end
