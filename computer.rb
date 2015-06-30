@@ -18,12 +18,14 @@ class CPU
 
   def make_move
     best_move = evaluate_moves
-    p best_move                            # DEBUG INFO
+    p best_move                            # debug info
     @board.move(best_move.from, best_move.to)
   end
 
+  private
+
   def evaluate_moves
-    sleep(0.35 + 0.1 * rand(2))
+    sleep(0.25 + 0.3 * rand(2))
     evaluated_moves = apply_logic_chain(@board.all_valid_moves(@color))
     best_move(evaluated_moves)
   end
@@ -39,123 +41,116 @@ class CPU
   def apply_logic_chain(moves)
     moves.each do |move|
       points = 0
-      points += dumb_select(move)
-      # points += puts_in_check_wo_risk(move)                    # + 20
-      # points += kills_greater_wo_risk(move)                    # + 30
-      # points += kills_greater_w_risk(move)               # + 20
-      # points += kills_wo_risk(move)                      # + 10
-      # points += develops_pieces(move)                          # + 3
-      # pawn_formation!(move)                           # + 2
-      # trade!(move)                                    # + 2
-      # can_lead_to_self_in_check!(move)                # - 15
-      # retreat_value!(move)                            # + variable
-      # points += leads_to_checkmate(move)              # + 1000
+      # points += dumb_select(move)
+      points += attack_points(move)
+      points += develops_pieces(move)
+      points += can_lead_to_self_in_check(move)
+      # points += retreat_value(move)
+      # points += pawn_formation(move)
+      # points += leads_to_checkmate(move)
       move.value = points
     end
   end
 
   def dumb_select(move)
-    return 5 if @board[*move.to] && @board[*move.to].color == @opp
-    0
+    @board[*move.to] && @board[*move.to].color == @opp ? 3 : 0
   end
 
-  def puts_in_check_wo_risk(move)
-    at_risk = fake_move_puts_at_risk?(move)
+  def attack_points(move)
+    other_piece = @board[*move.to]
+    fake_move(move)
+    at_risk = at_risk?(move)
+    our_value = PIECE_VALUES[move.piece.class]
+    their_value = PIECE_VALUES[other_piece.class]
+    points = 0
+
     if @board.in_check?(@opp) && !at_risk
-      undo_move(move)
-      p "puts_in_check_wo_risk #{move.to_s}"   # DEBUG
-      return 22
+      points += puts_in_check_wo_risk
     end
-    undo_move(move)
-    0
+
+    if other_piece && !at_risk && their_value > our_value
+      points += kills_greater_wo_risk(their_value, our_value)
+    end
+
+
+    if other_piece && at_risk && their_value > our_value
+      points += kills_greater_w_risk(their_value, our_value)
+    end
+
+    if other_piece && !at_risk && their_value <= our_value
+      points += kills_lesser_or_equal_wo_risk(their_value, our_value)
+    end
+
+    undo_fake_move(move)
+    points
   end
 
-  def kills_greater_wo_risk(move)
-    other = @board[*move.to]
-    at_risk = fake_move_puts_at_risk?(move)
-    if other && !at_risk
-      us = PIECE_VALUES[move.piece.class]
-      them = PIECE_VALUES[other.class]
-      undo_move(move)
-      p "kills_greater_wo_risk #{move.to_s}" if them > us # DEBUG
-      return (them - us) * 8 if them > us
-    end
-    undo_move(move)
-    0
+  def puts_in_check_wo_risk
+    # puts "Putting in check without risk!"
+    15
   end
 
-  def kills_greater_w_risk(move)
-    other = @board[*move.to]
-    at_risk = fake_move_puts_at_risk?(move)
-    if other && at_risk
-      us = PIECE_VALUES[move.piece.class]
-      them = PIECE_VALUES[other.class]
-      undo_move(move)
-      p "kills_greater_w_risk #{move.to_s}" if them > us
-      return 7 + (them - us) * 4 if them > us
-    end
-    undo_move(move)
-    0
+  def kills_greater_wo_risk(their_value, our_value)
+    # puts "Killing greater without risk!"
+    (their_value - our_value) * 8
   end
 
-  def kills_wo_risk(move)
-    other = @board[*move.to]
-    at_risk = fake_move_puts_at_risk?(move)
-    if other && at_risk
-      us = PIECE_VALUES[move.piece.class]
-      them = PIECE_VALUES[other.class]
-      undo_move(move)
-      p "kills_wo_risk #{move.to_s}" if them > us
-      return 15 + (them - us)
-    end
-    undo_move(move)
-    0
+  def kills_greater_w_risk(their_value, our_value)
+    # puts "Killing greater WITH risk!"
+    7 + (their_value - our_value) * 4
+  end
+
+  def kills_lesser_or_equal_wo_risk(their_value, our_value)
+    # puts "Killing lesser or equal without risk!"
+    1 + (their_value - our_value)
   end
 
   def develops_pieces(move)
-    dividing_line = @color == :w ? 6 : 1
-    return move.to[0] > dividing_line ? 1 : 0
+    # puts "Developing pieces!"
+    our_value = PIECE_VALUES[move.piece.class]
+    move.to[0].between?(2, 5) ? 1 : 0
+  end
+
+  def can_lead_to_self_in_check(move)
+    fake_move(move)
+    points = checkable? ? -20 : 0
+    undo_fake_move(move)
+    points
   end
 
   # def pawn_formation(move)
-  #   at_risk = fake_move_puts_at_risk?(move)
-  #   undo_move(move)
-  # end
-  #
-  # def trade!(move)
-  #   at_risk = fake_move_puts_at_risk?(move)
-  #   undo_move(move)
-  # end
-  #
-  # def can_lead_to_self_in_check(move)
-  #   at_risk = fake_move_puts_at_risk?(move)
-  #   undo_move(move)
-  # end
-  #
-  # def retreat_value(move)
-  #   at_risk = fake_move_puts_at_risk?(move)
-  #   undo_move(move)
   # end
 
-  def fake_move_puts_at_risk?(move)
+  # def retreat_value(move)
+  # end
+
+  # def leads_to_checkmate(move)
+  # end
+
+  def fake_move(move)
     piece = move.piece
-    @temp_there = @board[*move.to]
-    @temp_moved_bool = piece.moved
+    @saved_tile_contents = @board[*move.to]
+    @saved_move_state = piece.moved
 
     @board[*move.from] = nil
     @board[*move.to] = piece
     piece.pos = move.to
     piece.moved = true
-
-    at_risk = @board.all_valid_moves(@opp).map(&:to).include?(move.to)
   end
 
-  def undo_move(move)
+  def at_risk?(move)
+    @board.all_valid_moves(@opp).map(&:to).include?(move.to)
+  end
+
+  def checkable?
+    @board.all_valid_moves(@opp).map(&:to).include?(@board.king_pos(@color))
+  end
+
+  def undo_fake_move(move)
     piece = move.piece
-    @board[*move.to] = @temp_there
+    @board[*move.to] = @saved_tile_contents
     @board[*move.from] = move.piece
     piece.pos = move.from
-    piece.moved = @temp_moved_bool
+    piece.moved = @saved_move_state
   end
-
 end

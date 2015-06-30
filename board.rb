@@ -43,6 +43,14 @@ class Board
     pieces(color).find { |piece| piece.is_a?(King) }
   end
 
+  def king_pos(color)
+    @rows.each_with_index do |row, i|
+      row.each_with_index do |piece, j|
+        return [i, j] if piece.is_a?(King) && piece.color == color
+      end
+    end
+  end
+
   def valid_pos?(pos)
     x, y = pos
     x.between?(0, 7) && y.between?(0, 7)
