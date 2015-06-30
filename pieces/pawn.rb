@@ -19,18 +19,17 @@ class Pawn < Piece
 
   def has_moved
     x, y = @pos
-    moves_arr = []
+    my_moves = []
     newx = x + @x_dir
     if on_board?([newx, y])
-      moves_arr << [newx, y] unless @board[newx, y]
-      if @board.valid_pos?([newx, y - 1]) && @board[newx, y - 1] && @board[newx, y - 1].color != @color
-        moves_arr << [newx, y - 1]
-      end
-      if @board.valid_pos?([newx, y + 1]) && @board[newx, y + 1] && @board[newx, y + 1].color != @color
-        moves_arr << [newx, y + 1]
+      my_moves << [newx, y] unless @board[newx, y]
+      [[newx, y - 1], [newx, y + 1]].each do |jump_pos|
+        if @board.valid_pos?(jump_pos) && @board[jump_pos] && @board[jump_pos].color != @color
+          my_moves << jump_pos
+        end
       end
     end
-    moves_arr
+    my_moves
   end
 
   def color=(color)

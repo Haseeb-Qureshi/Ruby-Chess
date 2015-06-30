@@ -41,13 +41,13 @@ class CPU
   def apply_logic_chain(moves)
     moves.each do |move|
       points = 0
-      # points += dumb_select(move)
       points += attack_points(move)
       points += develops_pieces(move)
       points += can_lead_to_self_in_check(move)
       # points += retreat_value(move)
       # points += pawn_formation(move)
       # points += leads_to_checkmate(move)
+      # points += dumb_select(move)
       move.value = points
     end
   end
