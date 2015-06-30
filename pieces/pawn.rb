@@ -23,10 +23,12 @@ class Pawn < Piece
     newx = x + @x_dir
     if on_board?([newx, y])
       moves_arr << [newx, y] unless @board[newx, y]
-      moves_arr << [newx, y - 1] if @board[newx, y - 1] &&
-                           @board[newx, y - 1].color != @color
-      moves_arr << [newx, y + 1] if @board[newx, y + 1] &&
-                           @board[newx, y + 1].color != @color
+      if @board.valid_pos?([newx, y - 1]) && @board[newx, y - 1] && @board[newx, y - 1].color != @color
+        moves_arr << [newx, y - 1]
+      end
+      if @board.valid_pos?([newx, y + 1]) && @board[newx, y + 1] && @board[newx, y + 1].color != @color
+        moves_arr << [newx, y + 1]
+      end
     end
     moves_arr
   end
