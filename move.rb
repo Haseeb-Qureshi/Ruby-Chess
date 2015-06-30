@@ -14,5 +14,4 @@ class Move
   def inspect
     "#{piece}: #{from} - #{to}, value: #{value}"
   end
-
 end

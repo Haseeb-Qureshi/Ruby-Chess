@@ -73,7 +73,7 @@ class Display
   def construct_square(here, piece)
     background = here.inject(:+).even? ? :light_red : :cyan
     piece_img = piece ? piece.to_s : " "
-    square = " #{piece_img}  ".colorize(background: background)
+    square = " #{piece_img} ".colorize(background: background)
 
     if @avail_moves.include?(here)
       avail_bg = piece && piece.color != @game.current_player.color ? :light_green : :yellow

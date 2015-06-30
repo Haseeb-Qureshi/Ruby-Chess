@@ -57,8 +57,12 @@ class Human
       @game.render
 
       if MOVEMENT[input] == [0, 0]
-        raise InvalidError unless !first_click && piece && piece.color == @color
-        raise UnableError if piece.moves.empty?
+        if first_click
+          raise InvalidError unless piece && piece.color == @color
+          raise UnableError if piece.moves.empty?
+        else
+          raise UnableError if !@game.avail_moves.include?(@game.get_cursor)
+        end
         choice = true
       end
     end
