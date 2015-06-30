@@ -52,6 +52,11 @@ class Game
     get_options
   end
 
+  def save!
+    puts "Where do you want to save this? Enter a filename (with no extension)."
+    save_file
+  end
+
   def game_over?
     @board.checkmate?(current_player.color)
   end
@@ -83,11 +88,13 @@ class Game
 
   def game_over_message
     winner = @players.last.color == :w ? "White" : "Black"
+    system 'clear'
     puts "Checkmate! #{winner} won!".colorize(color: :yellow).bold
+    sleep(1)
+    exit
   end
 
-  def save!
-    puts "Where do you want to save this? Enter a filename (with no extension)."
+  def save_file
     filename = gets.chomp + '.yml'
 
     File.open(filename, 'w') do |f|
