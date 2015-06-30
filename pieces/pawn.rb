@@ -24,7 +24,7 @@ class Pawn < Piece
     if on_board?([newx, y])
       my_moves << [newx, y] unless @board[newx, y]
       [[newx, y - 1], [newx, y + 1]].each do |jump_pos|
-        if @board.valid_pos?(jump_pos) && @board[jump_pos] && @board[jump_pos].color != @color
+        if @board.valid_pos?(jump_pos) && @board[*jump_pos] && @board[*jump_pos].color != @color
           my_moves << jump_pos
         end
       end
