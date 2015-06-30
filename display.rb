@@ -1,5 +1,5 @@
 class Display
-  attr_reader :cursor, :avail_moves
+  attr_reader :avail_moves
   def initialize(game, debug)
     @game = game
     @board = @game.board
@@ -26,6 +26,10 @@ class Display
     dx, dy = move
     @cursor = [x + dx, y + dy]
     init_debug           # reinitializes debug information
+  end
+
+  def get_cursor
+    @cursor
   end
 
   def show_avail_moves(piece)

@@ -12,6 +12,7 @@ require_relative 'display'
 # TODO: REWORK AI, GET AI DEBUG WORKING
 
 class Game
+  extend Forwardable
   attr_reader :board, :cursor, :players, :all_cpu
   attr_accessor :avail_moves, :captured
 
@@ -55,9 +56,18 @@ class Game
     @board.checkmate?(current_player.color)
   end
 
-  def render
-    @display.render
+  def current_player
+    @players.first
   end
+
+  def_delegators :@display, :render,
+                            :reset_render,
+                            :update_cursor,
+                            :avail_moves,
+                            :show_avail_moves,
+                            :get_cursor
+
+  private
 
   def get_options
     puts "1 - Computer vs Computer"
@@ -75,32 +85,6 @@ class Game
     winner = @players.last.color == :w ? "White" : "Black"
     puts "Checkmate! #{winner} won!".colorize(color: :yellow).bold
   end
-
-  def reset_render
-    @display.reset_render
-  end
-
-  def update_cursor(move)
-    @display.update_cursor(move)
-  end
-
-  def show_avail_moves(piece)
-    @display.show_avail_moves(piece)
-  end
-
-  def avail_moves
-    @display.avail_moves
-  end
-
-  def get_cursor
-    @display.cursor
-  end
-
-  def current_player
-    @players.first
-  end
-
-  private
 
   def save!
     puts "Where do you want to save this? Enter a filename (with no extension)."
