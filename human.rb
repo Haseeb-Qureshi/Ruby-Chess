@@ -29,7 +29,7 @@ class Human
     raise CheckError if @board.puts_in_check?(from_coords, to_coords, @color)
 
     @board.move(from_coords, to_coords)
-###############################################################################
+
   rescue InvalidError
     puts "Invalid selection. Try again.".colorize(color: :red).bold
     @game.reset_render
@@ -44,18 +44,20 @@ class Human
     retry
   end
 
-  def get_move_from
+  def get_move(first_click)
     choice = false
     until choice
       input = get_input
       @game.update_cursor(MOVEMENT[input])
 
-      piece = @board[*@game.get_cursor]
-      @game.show_avail_moves(piece)
+      if first_click
+        piece = @board[*@game.get_cursor]
+        @game.show_avail_moves(piece)
+      end
       @game.render
 
       if MOVEMENT[input] == [0, 0]
-        raise InvalidError unless piece && piece.color == @color
+        raise InvalidError unless !first_click && piece && piece.color == @color
         raise UnableError if piece.moves.empty?
         choice = true
       end
@@ -63,19 +65,12 @@ class Human
     @game.get_cursor.dup
   end
 
-  def get_move_to
-    choice = false
-    until choice
-      input = get_input
-      @game.update_cursor(MOVEMENT[input])
-      @game.render
+  def get_move_from
+    get_move(true)
+  end
 
-      if MOVEMENT[input] == [0, 0]
-        raise UnableError if !@game.avail_moves.include?(@game.get_cursor)
-        choice = true
-      end
-    end
-    @game.get_cursor.dup
+  def get_move_to
+    get_move(false)
   end
 
   def get_input
