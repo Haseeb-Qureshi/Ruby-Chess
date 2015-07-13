@@ -89,8 +89,8 @@ class Display
     rendered.map!.with_index do |line, i|
       " #{8 - i} " + line
     end
-    letters = ('a'..'h').to_a.map { |l| "  #{l} " }
-    rendered << "  " + letters.join
+    letters = ('a'..'h').to_a.map { |l| " #{l} " }
+    rendered << "   " + letters.join
   end
 
   def init_debug
