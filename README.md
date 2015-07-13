@@ -12,3 +12,5 @@
 
 ###### Note: I'm good at coding chess, not so much at playing.
 ![chess](http://i.gyazo.com/e8cc96537eb692d9deb70ed227373d30.gif)
+
+(To run the game, just beam down the repo and run game.rb)
