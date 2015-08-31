@@ -9,7 +9,6 @@ require_relative 'human'
 require_relative 'display'
 
 # TODO: ADD PAWN PROMOTION
-# TODO: REWORK AI, GET AI DEBUG WORKING
 
 class Game
   extend Forwardable
@@ -48,6 +47,7 @@ class Game
   end
 
   def welcome
+    system 'clear'
     puts "Welcome to chess! Select your mode."
     get_options
   end
