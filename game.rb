@@ -9,19 +9,12 @@ require_relative 'human'
 require_relative 'display'
 
 # TODO: ADD PAWN PROMOTION
+# TODO: IMPROVE CHESS AI
 
 class Game
   extend Forwardable
   attr_reader :board, :cursor, :players, :all_cpu
   attr_accessor :avail_moves, :captured
-
-  def self.load(file)
-    YAML.load_file(file)
-  rescue
-    system 'clear'
-    puts "Sorry, that file can't be found.".bold
-    exit
-  end
 
   def initialize
     @activate_debug = false
@@ -73,6 +66,14 @@ class Game
                             :get_cursor
 
   private
+
+  def self.load(file)
+    YAML.load_file(file)
+  rescue
+    system 'clear'
+    puts "Sorry, that file can't be found.".bold
+    exit
+  end
 
   def get_options
     puts "1 - Computer vs Computer"
@@ -138,7 +139,7 @@ class Game
 
   rescue LoadingError
     system 'clear'
-    puts "Sorry, your save data was corrupted.".bold
+    puts "Sorry, your save data could not be read.".bold
     start
   end
 end

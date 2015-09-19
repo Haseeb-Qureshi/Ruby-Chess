@@ -11,6 +11,10 @@ class Move
     @from == other.from && @to == other.to && @piece == other.piece
   end
 
+  def hash
+    [@from, @to, @piece].hash
+  end
+
   def inspect
     "#{piece}: #{from} - #{to}, value: #{value}"
   end

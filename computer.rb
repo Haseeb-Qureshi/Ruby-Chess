@@ -17,34 +17,33 @@ class CPU
   end
 
   def make_move
-    best_move = evaluate_moves
-    p best_move                            # debug info
+    wait_a_little
+    best_move = choose_best_move
     @board.move(best_move.from, best_move.to)
   end
 
   private
 
-  def evaluate_moves
+  def wait_a_little
     sleep(0.25 + 0.3 * rand(2))
-    evaluated_moves = apply_logic_chain(@board.all_valid_moves(@color))
-    best_move(evaluated_moves)
+  end
+
+  def choose_best_move
+    move_scores = apply_logic_chain(@board.all_valid_moves(@color))
+    best_move(move_scores)
   end
 
   def best_move(moves)
-    if moves.none? { |move| move.value > 0 }
-      moves.sample
-    else
-      moves.max_by(&:value)
-    end
+    moves.shuffle.max_by(&:value)
   end
 
   def apply_logic_chain(moves)
     moves.each do |move|
       points = 0
       points += attack_points(move)
-      points += develops_pieces(move)
-      points += can_lead_to_self_in_check(move)
-      # points += retreat_value(move)
+      points += piece_development_points(move)
+      points += lead_to_self_in_check_points(move)
+      points += retreat_value(move)
       # points += pawn_formation(move)
       # points += leads_to_checkmate(move)
       # points += dumb_select(move)
@@ -59,7 +58,7 @@ class CPU
   def attack_points(move)
     other_piece = @board[*move.to]
     fake_move(move)
-    at_risk = at_risk?(move)
+    at_risk = at_risk?(move.to)
     our_value = PIECE_VALUES[move.piece.class]
     their_value = PIECE_VALUES[other_piece.class]
     points = 0
@@ -97,7 +96,7 @@ class CPU
 
   def kills_greater_w_risk(their_value, our_value)
     # puts "Killing greater WITH risk!"
-    7 + (their_value - our_value) * 4
+    7 + ((their_value - our_value) * 4)
   end
 
   def kills_lesser_or_equal_wo_risk(their_value, our_value)
@@ -105,23 +104,30 @@ class CPU
     1 + (their_value - our_value)
   end
 
-  def develops_pieces(move)
+  def piece_development_points(move)
     # puts "Developing pieces!"
     our_value = PIECE_VALUES[move.piece.class]
     move.to[0].between?(2, 5) ? 1 : 0
   end
 
-  def can_lead_to_self_in_check(move)
+  def lead_to_self_in_check_points(move)
     fake_move(move)
     points = checkable? ? -20 : 0
     undo_fake_move(move)
     points
   end
 
-  # def pawn_formation(move)
-  # end
+  def retreat_value(move)
+    points = 0
+    if at_risk?(move.from)
+      fake_move(move)
+       points = PIECE_VALUES(move.piece.class) if !at_risk?(move.to)
+      undo_fake_move(move)
+    end
+    points
+  end
 
-  # def retreat_value(move)
+  # def pawn_formation(move)
   # end
 
   # def leads_to_checkmate(move)
@@ -138,8 +144,8 @@ class CPU
     piece.moved = true
   end
 
-  def at_risk?(move)
-    @board.all_valid_moves(@opp).map(&:to).include?(move.to)
+  def at_risk?(location)
+    @board.all_valid_moves(@opp).map(&:to).include?(location)
   end
 
   def checkable?
