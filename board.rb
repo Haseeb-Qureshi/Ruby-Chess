@@ -22,16 +22,16 @@ class Board
     @rows[x][y] = val
   end
 
-  def move(start_pos, end_pos)
-    piece = self[*start_pos]
-    target = self[*end_pos]
+  def move(move)
+    piece = move.piece
+    target = self[*move.to]
 
-    self[*start_pos] = nil
-    self[*end_pos] = piece
+    self[*move.from] = nil
+    self[*move.to] = piece
 
     @game.captured << target if target
     @game.avail_moves = []
-    piece.pos = end_pos
+    piece.pos = move.to
     piece.moved = true
   end
 

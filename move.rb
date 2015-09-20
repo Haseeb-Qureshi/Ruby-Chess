@@ -1,10 +1,11 @@
 class Move
   include Comparable
-  attr_accessor :from, :to, :piece, :value
+  attr_accessor :from, :to, :piece, :value, :reasons
 
   def initialize(from, to, piece)
     @from, @to, @piece = from, to, piece
     @value = 0
+    @reasons = []
   end
 
   def ==(other)

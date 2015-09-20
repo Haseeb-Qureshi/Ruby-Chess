@@ -28,7 +28,7 @@ class Human
     to_coords = get_move_to
     raise CheckError if @board.puts_in_check?(from_coords, to_coords, @color)
 
-    @board.move(from_coords, to_coords)
+    @board.move(Move.new(from_coords, to_coords, piece))
 
   rescue InvalidError
     puts "Invalid selection. Try again.".colorize(color: :red).bold

@@ -14,18 +14,20 @@ class CPU
     @game, @color, @board = game, color, board
     @moves = 0
     @opp = Board.opp(@color)
+    @show_reasoning = true
   end
 
   def make_move
     wait_a_little
-    best_move = choose_best_move
-    @board.move(best_move.from, best_move.to)
+    move = choose_best_move
+    puts "#{move.piece}:  #{move.reasons.join(", ")}" if @show_reasoning
+    @board.move(move)
   end
 
   private
 
   def wait_a_little
-    sleep(0.25 + 0.3 * rand(2))
+    sleep(0.15 + 0.1 * rand(2))
   end
 
   def choose_best_move
@@ -40,12 +42,12 @@ class CPU
   def apply_logic_chain(moves)
     moves.each do |move|
       points = 0
-      points += attack_points(move)
+      points += attacking_points(move)
       points += piece_development_points(move)
       points += lead_to_self_in_check_points(move)
-      points += retreat_value(move)
-      # points += pawn_formation(move)
-      # points += leads_to_checkmate(move)
+      points += tactical_retreat_points(move)
+      points += puts_self_at_risk_points(move)
+      points += checkmate_points(move)
       # points += dumb_select(move)
       move.value = points
     end
@@ -55,7 +57,7 @@ class CPU
     @board[*move.to] && @board[*move.to].color == @opp ? 3 : 0
   end
 
-  def attack_points(move)
+  def attacking_points(move)
     other_piece = @board[*move.to]
     fake_move(move)
     at_risk = at_risk?(move.to)
@@ -64,74 +66,90 @@ class CPU
     points = 0
 
     if @board.in_check?(@opp) && !at_risk
-      points += puts_in_check_wo_risk
+      points += puts_in_check_wo_risk(move)
     end
 
     if other_piece && !at_risk && their_value > our_value
-      points += kills_greater_wo_risk(their_value, our_value)
+      points += kills_greater_wo_risk(move, their_value, our_value)
     end
 
 
     if other_piece && at_risk && their_value > our_value
-      points += kills_greater_w_risk(their_value, our_value)
+      points += kills_greater_w_risk(move, their_value, our_value)
     end
 
     if other_piece && !at_risk && their_value <= our_value
-      points += kills_lesser_or_equal_wo_risk(their_value, our_value)
+      points += kills_lesser_or_equal_wo_risk(move, their_value, our_value)
     end
 
     undo_fake_move(move)
     points
   end
 
-  def puts_in_check_wo_risk
-    # puts "Putting in check without risk!"
+  def puts_in_check_wo_risk(move)
+    move.reasons << "Putting in check without risk!" if @show_reasoning
     15
   end
 
-  def kills_greater_wo_risk(their_value, our_value)
-    # puts "Killing greater without risk!"
+  def kills_greater_wo_risk(move, their_value, our_value)
+    move.reasons << "Killing greater without risk!" if @show_reasoning
     (their_value - our_value) * 8
   end
 
-  def kills_greater_w_risk(their_value, our_value)
-    # puts "Killing greater WITH risk!"
+  def kills_greater_w_risk(move, their_value, our_value)
+    move.reasons << "Killing greater WITH risk!" if @show_reasoning
     7 + ((their_value - our_value) * 4)
   end
 
-  def kills_lesser_or_equal_wo_risk(their_value, our_value)
-    # puts "Killing lesser or equal without risk!"
+  def kills_lesser_or_equal_wo_risk(move, their_value, our_value)
+    move.reasons << "Killing lesser or equal without risk!" if @show_reasoning
     1 + (their_value - our_value)
   end
 
   def piece_development_points(move)
-    # puts "Developing pieces!"
     our_value = PIECE_VALUES[move.piece.class]
-    move.to[0].between?(2, 5) ? 1 : 0
+    points = move.to[0].between?(2, 5) ? 1 : 0
+    move.reasons << "Piece development point!" if @show_reasoning && points > 0
+    points
   end
 
   def lead_to_self_in_check_points(move)
     fake_move(move)
     points = checkable? ? -20 : 0
     undo_fake_move(move)
+    move.reasons << "Leads to self in check..." if @show_reasoning && points < 0
     points
   end
 
-  def retreat_value(move)
+  def tactical_retreat_points(move)
     points = 0
     if at_risk?(move.from)
       fake_move(move)
-       points = PIECE_VALUES(move.piece.class) if !at_risk?(move.to)
+      points += PIECE_VALUES[move.piece.class] if !at_risk?(move.to)
       undo_fake_move(move)
     end
+    move.reasons << "Retreat value of #{points}!" if @show_reasoning && points > 0
     points
   end
 
-  # def pawn_formation(move)
-  # end
+  def puts_self_at_risk_points(move)
+    points = 0
+    if !at_risk?(move.from)
+      fake_move(move)
+      points -= PIECE_VALUES[move.piece.class] if at_risk?(move.to)
+      undo_fake_move(move)
+    end
+    move.reasons << "Puts self at risk..." if @show_reasoning && points < 0
+    points
+  end
 
-  # def leads_to_checkmate(move)
-  # end
+  def checkmate_points(move)
+    fake_move(move)
+    points = @board.checkmate?(@opp) ? Float::INFINITY : 0
+    undo_fake_move(move)
+    move.reasons << "Leads to checkmate!" if @show_reasoning && points > 0
+    points
+  end
 
   def fake_move(move)
     piece = move.piece
@@ -145,7 +163,7 @@ class CPU
   end
 
   def at_risk?(location)
-    @board.all_valid_moves(@opp).map(&:to).include?(location)
+    @board.all_valid_moves(@opp).any? { |move| move.to == location }
   end
 
   def checkable?
