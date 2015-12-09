@@ -106,13 +106,11 @@ class Board
   end
 
   def set_board
-    first_row = set_row(royalty, 0, :b)
-    second_row = set_row(eight_pawns, 1, :b)
-    bottom_pawns = set_row(eight_pawns, 6, :w)
-    bottom_row = set_row(royalty, 7, :w)
-
-    @rows[0] = first_row; @rows[1] = second_row
-    @rows[6] = bottom_pawns; @rows[7] = bottom_row
+    @rows[0] = set_row(royalty, 0, :b)
+    @rows[1] = set_row(eight_pawns, 1, :b)
+    
+    @rows[6] = set_row(eight_pawns, 6, :w)
+    @rows[7] = set_row(royalty, 7, :w)
   end
 
   private
