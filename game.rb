@@ -8,8 +8,7 @@ require_relative 'computer'
 require_relative 'human'
 require_relative 'display'
 
-# TODO: ADD PAWN PROMOTION
-# TODO: IMPROVE CHESS AI
+# TODO: Add pawn promotion
 
 class Game
   extend Forwardable

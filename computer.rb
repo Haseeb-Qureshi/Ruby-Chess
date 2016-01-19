@@ -14,7 +14,7 @@ class CPU
     @game, @color, @board = game, color, board
     @moves = 0
     @opp = Board.opp(@color)
-    @show_reasoning = true
+    @show_reasoning = false
   end
 
   def make_move
@@ -48,7 +48,6 @@ class CPU
       points += tactical_retreat_points(move)
       points += puts_self_at_risk_points(move)
       points += checkmate_points(move)
-      # points += dumb_select(move)
       move.value = points
     end
   end
