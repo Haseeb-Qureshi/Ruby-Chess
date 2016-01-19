@@ -1,7 +1,7 @@
 # Chess game
 ##### Written all in Ruby; runs in console with some slick prompting
 
-![c9](http://cloud9ide.zendesk.com/system/photos/0001/0216/5694/logo_thumb.png) You can play the game live on Cloud9 [here](https://ide.c9.io/haseeb_qureshi/ruby-chess). The login is *guestaccount*, password *guestaccount*.
+<img src="https://pbs.twimg.com/profile_images/495211744633950209/CvjNepWX.png" width="30" height="30"> You can play the game live on Cloud9 [here](https://ide.c9.io/haseeb_qureshi/ruby-chess). The login is *guestaccount*, password *guestaccount*.
 
 ### Features:
 * Save/load games
